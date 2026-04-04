@@ -2,6 +2,7 @@ import os
 import uuid
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -9,9 +10,15 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 app = FastAPI(title="MPI Runner API")
+
+BASE_DIR = Path(__file__).resolve().parent
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,21 +28,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "frontend")), name="static")
 
 
 AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 S3_BUCKET = os.getenv("S3_BUCKET", "")
 MPI_BINARY = os.getenv("MPI_BINARY", "./phase2")
 MPI_PROCS = os.getenv("MPI_PROCS", "4")
+MPI_OVERSUBSCRIBE = os.getenv("MPI_OVERSUBSCRIBE", "true").lower() in {"1", "true", "yes", "on"}
 LOCAL_WORK_DIR = os.getenv("LOCAL_WORK_DIR", "/tmp/mpi_jobs")
+
+if os.path.isabs(MPI_BINARY):
+    MPI_BINARY_PATH = MPI_BINARY
+else:
+    MPI_BINARY_PATH = str((BASE_DIR / MPI_BINARY).resolve())
 
 os.makedirs(LOCAL_WORK_DIR, exist_ok=True)
 
 
 @app.get("/")
 def home():
-    return FileResponse("frontend/index.html")
+    return FileResponse(str(BASE_DIR / "frontend" / "index.html"))
 
 
 @app.get("/health")
@@ -57,8 +70,8 @@ async def run_mpi(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".txt"):
         raise HTTPException(status_code=400, detail="Only .txt file is allowed")
 
-    if not os.path.exists(MPI_BINARY):
-        raise HTTPException(status_code=500, detail=f"MPI binary not found: {MPI_BINARY}")
+    if not os.path.exists(MPI_BINARY_PATH):
+        raise HTTPException(status_code=500, detail=f"MPI binary not found: {MPI_BINARY_PATH}")
 
     job_id = str(uuid.uuid4())
     input_local = os.path.join(LOCAL_WORK_DIR, f"{job_id}_input.txt")
@@ -69,17 +82,28 @@ async def run_mpi(file: UploadFile = File(...)):
         f.write(content)
 
     # phase2 usage: ./phase2 input.txt output.txt
-    cmd = [
-        "mpirun",
+    cmd = ["mpirun"]
+    if MPI_OVERSUBSCRIBE:
+        cmd.append("--oversubscribe")
+    cmd.extend([
         "-np",
         str(MPI_PROCS),
-        MPI_BINARY,
+        MPI_BINARY_PATH,
         input_local,
         output_local,
-    ]
+    ])
 
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+
+        # Auto-retry once with --oversubscribe if slots are insufficient
+        if (
+            proc.returncode != 0
+            and "not enough slots available" in (proc.stderr or "").lower()
+            and "--oversubscribe" not in cmd
+        ):
+            retry_cmd = ["mpirun", "--oversubscribe", "-np", str(MPI_PROCS), MPI_BINARY_PATH, input_local, output_local]
+            proc = subprocess.run(retry_cmd, capture_output=True, text=True, timeout=300)
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="MPI job timed out")
 
