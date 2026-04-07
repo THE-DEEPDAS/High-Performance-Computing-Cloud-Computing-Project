@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import boto3
+from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,6 +55,10 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "ok", "time_utc": datetime.now(timezone.utc).isoformat()}
+
+
+def _run_cmd(command: list[str], timeout_seconds: int = 300):
+    return subprocess.run(command, capture_output=True, text=True, timeout=timeout_seconds)
 
 
 def _upload_to_s3(local_path: str, key: str):
@@ -125,11 +130,13 @@ async def run_mpi(file: UploadFile = File(...)):
 
     input_s3 = None
     output_s3 = None
+    s3_warning = None
     try:
         input_s3 = _upload_to_s3(input_local, f"inputs/{job_id}.txt")
         output_s3 = _upload_to_s3(output_local, f"outputs/{job_id}.txt")
-    except (BotoCoreError, ClientError) as e:
-        raise HTTPException(status_code=500, detail=f"S3 upload failed: {str(e)}")
+    except (BotoCoreError, ClientError, S3UploadFailedError) as e:
+        # Keep MPI result successful even when optional S3 archival fails.
+        s3_warning = f"S3 upload failed: {str(e)}"
 
     return {
         "job_id": job_id,
@@ -139,4 +146,7 @@ async def run_mpi(file: UploadFile = File(...)):
         "output_preview": output_text[:4000],
         "input_s3": input_s3,
         "output_s3": output_s3,
+        "s3_warning": s3_warning,
     }
+
+

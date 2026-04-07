@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MPI Test Runner</title>
+  <title>MPI Backend Test Runner</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 2rem; max-width: 900px; }
     .card { border: 1px solid #ddd; border-radius: 10px; padding: 1rem; }
@@ -31,26 +31,31 @@
     const statusEl = document.getElementById('status');
     const resultEl = document.getElementById('result');
 
-    runBtn.addEventListener('click', async () => {
+    async function submitJob(endpoint, statusText) {
       const file = fileInput.files[0];
       if (!file) {
         statusEl.textContent = 'Please choose a .txt file first.';
-        return;
+        return false;
       }
 
       const formData = new FormData();
       formData.append('file', file);
 
-      statusEl.textContent = 'Running MPI job...';
+      statusEl.textContent = statusText;
       resultEl.textContent = 'Waiting...';
 
       try {
-        const res = await fetch('/run', {
+        const res = await fetch(endpoint, {
           method: 'POST',
           body: formData,
         });
-
-        const json = await res.json();
+        const raw = await res.text();
+        let json;
+        try {
+          json = JSON.parse(raw);
+        } catch {
+          json = { error: raw };
+        }
         if (!res.ok) {
           statusEl.textContent = 'Job failed.';
           resultEl.textContent = JSON.stringify(json, null, 2);
@@ -63,6 +68,11 @@
         statusEl.textContent = 'Request failed.';
         resultEl.textContent = String(err);
       }
+      return true;
+    }
+
+    runBtn.addEventListener('click', async () => {
+      await submitJob('/run', 'Running MPI job...');
     });
   </script>
 </body>
