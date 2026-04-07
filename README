@@ -48,7 +48,6 @@ The file [frontend/index.html](frontend/index.html) provides a simple UI:
 - view JSON response in browser
 
 ---
-
 ### 4) Environment/dependencies prepared
 The file [requirements.txt](requirements.txt) includes:
 - `fastapi`
@@ -85,7 +84,7 @@ Recommended values:
 ### Test endpoints
 - Browser UI: `http://<HOST>:8000/`
 - Health: `http://<HOST>:8000/health`
-- API: `POST http://<HOST>:8000/run` with `file=@grid.txt`
+- MPI API: `POST http://<HOST>:8000/run` with `file=@grid.txt`
 
 ---
 
