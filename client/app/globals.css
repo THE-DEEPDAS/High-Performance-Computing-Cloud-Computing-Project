@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f3efe3;
+  --foreground: #161616;
+  --surface: #fffdfa;
+  --surface-border: #d7cfbf;
+  --accent: #0e7a54;
+  --accent-dark: #0a5a3e;
+  --warn: #d9480f;
+  --ok: #2f9e44;
+  --running: #1d4ed8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #f3efe3;
+    --foreground: #161616;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1400px 700px at -5% -15%, #d7fbe8 0%, transparent 60%),
+    radial-gradient(1200px 700px at 110% 0%, #e5f0ff 0%, transparent 50%),
+    linear-gradient(145deg, #f6f2e8 0%, #efe8d8 100%);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+}
+
+.page-shell {
+  min-height: 100vh;
+}
+
+.hero-panel,
+.panel,
+.metric-card {
+  border: 1px solid var(--surface-border);
+  background: color-mix(in oklab, var(--surface) 88%, white 12%);
+  border-radius: 1.1rem;
+  box-shadow: 0 8px 30px rgba(39, 35, 26, 0.08);
+}
+
+.hero-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.5rem;
+}
+
+.panel {
+  padding: 1.3rem;
+}
+
+.chip {
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #d7cfbf;
+  background: #f8f4ea;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #574d3c;
+}
+
+.section-title {
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #151515;
+}
+
+.file-input {
+  border: 1px solid #cfc5b2;
+  border-radius: 0.8rem;
+  padding: 0.55rem;
+  background: #fffcf4;
+}
+
+.file-input::file-selector-button {
+  margin-right: 0.8rem;
+  border: 1px solid #b5aa95;
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  background: #efe7d6;
+  color: #332e22;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action-btn {
+  border: 0;
+  border-radius: 0.8rem;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: #effff8;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 10px 24px rgba(14, 122, 84, 0.26);
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.status-idle {
+  color: #5f5b52;
+  background: #f2ede4;
+  border-color: #d6cfbe;
+}
+
+.status-running {
+  color: #0b2f7a;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.status-success {
+  color: #175c26;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.status-error {
+  color: #7a2308;
+  background: #ffebe4;
+  border-color: #ffcab8;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, #60a5fa 0%, #2563eb 60%, #1e40af 100%);
+  animation: pulse-progress 1.4s ease-in-out infinite;
+}
+
+.metric-card {
+  padding: 1rem;
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #605746;
+}
+
+.metric-value {
+  margin-top: 0.55rem;
+  font-size: clamp(1.2rem, 2.4vw, 1.8rem);
+  font-weight: 800;
+  color: #17120a;
+}
+
+.output-box,
+.output-mini {
+  border: 1px solid #cfc6b4;
+  border-radius: 0.9rem;
+  background: #fffef8;
+  color: #1e1b16;
+  font-family: var(--font-geist-mono), "Consolas", monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.output-box {
+  min-height: 220px;
+  max-height: 460px;
+  padding: 1rem;
+}
+
+.output-mini {
+  min-height: 84px;
+  max-height: 220px;
+  padding: 0.75rem;
+}
+
+@keyframes pulse-progress {
+  0% {
+    transform: translateX(-8%);
+    opacity: 0.75;
+  }
+
+  50% {
+    transform: translateX(0%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(8%);
+    opacity: 0.75;
+  }
+}
+
+@media (max-width: 640px) {
+
+  .hero-panel,
+  .panel,
+  .metric-card {
+    border-radius: 0.95rem;
+  }
+
+  .hero-panel,
+  .panel {
+    padding: 1rem;
+  }
+}
