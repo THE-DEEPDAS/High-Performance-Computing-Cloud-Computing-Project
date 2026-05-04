@@ -69,7 +69,7 @@ function parseErrorDetail(detail: unknown): string {
 }
 
 export default function Home() {
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  const apiBase = "http://51.20.130.46:8000";
 
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<JobStatus>("idle");
